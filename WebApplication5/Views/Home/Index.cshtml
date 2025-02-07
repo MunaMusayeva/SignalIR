@@ -1,0 +1,130 @@
+﻿
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+	<script>
+		$(document).ready(() => {
+			 var connection = new signalR.HubConnectionBuilder()
+		.withUrl("/chatHub") 
+		.build();
+		connection.start();
+
+			$(".disabled").attr("disabled", "disabled");
+
+			$("body").on("click",".users",function () {
+				$(".users").each(function (index, item) {
+					item.classList.remove("active");
+				});
+				$(this).addClass("active");
+			});
+
+			$("#btnGirisYap").click(()=>{
+				const nickName = $("#txtNickName").val();
+				connection.invoke("GetNickName",nickName);
+				$(".disabled").removeAttr("disabled")
+			});
+
+			connection.on("clientJoined",nickName=>{
+				$("#clientDurumMesajlari").html(`${nickName} giris yapti.`)
+				$("#clientDurumMesajlari").fadeIn(2000,()=>{
+					setTimeout(()=>{
+						$("#clientDurumMesajlari").fadeOut(2000);
+					
+					},2000)
+				})
+			});
+
+			connection.on("clients", (clients) => {
+	$("#_clients").html("");
+	$.each(clients, (index, item) => {
+		const user = $(".users").first().clone();
+		user.removeClass("active");
+		user.html(item.nickName);
+		$("#_clients").append(user);
+	});
+});
+
+connection.on("receiveMessage", (message, nickName) => {
+	const _message = $(".message").clone();
+	_message.removeClass("message");
+	_message.find("p").html(message);
+	_message.find("h5")[0].innerHTML=nickName;
+	$(".messages").append(_message);
+})
+
+$("#btnGonder").click(() => {
+	const clientName = $(".users.active").first().html();
+	const message = $("#txtMesaj").val();
+	connection.invoke("SendMessageAsync", message, clientName);
+
+	const _message = $(".message").clone();
+	_message.removeClass("message");
+	_message.find("p").html(message);
+	_message.find("h5")[1].innerHTML="Sen";
+	$(".messages").append(_message);
+});
+		});
+	</script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body class="bg-gray-100 ">
+	<div class="">
+		<div class=" ">
+			<div class="w-full md:w-1/2 bg-white p-4 rounded shadow">
+
+
+
+				<div>
+
+
+				<br><br>
+
+				<br><br>
+				<div class="list-group clients">
+					<a class="list-group-item list-group-item-action users active bg-blue-500 text-white py-2 px-4 rounded">Tumu</a>
+					<div id="_clients">
+
+					</div>
+				</div>
+			</div>
+			<div class="w-full md:w-6/12">
+				<div class="mb-4">
+					<div class="alert alert-success" id="clientDurumMesajlari" style="display:none;">
+
+					</div>
+					<textarea class="form-control w-full p-2 border border-gray-300 rounded" style="margin-top: 5px;" placeholder="İletilecek mesajı buraya giriniz." rows="3" id="txtMesaj"></textarea>
+					<button type="button" class="btn btn-light bg-gray-200 text-gray-700 py-2 px-4 rounded mt-2" id="btnGonder">Gönder</button>
+				</div>
+				<br><br>
+				<div class="list-group messages">
+					<a class="list-group-item list-group-item-action message bg-gray-200 py-2 px-4 rounded" aria-current="true">
+						<div class="flex w-full justify-between">
+							<h5 class="mb-1"></h5>
+							<h5 class="mb-1"></h5>
+						</div>
+						<p class="mb-1"></p>
+						
+					</a>
+				</div>
+			</div>
+			<div class="w-full md:w-3/12">
+				<input class="form-control w-full p-2 border border-gray-300 rounded" type="text" placeholder="Adınız/Nick" id="txtNickName">
+				<button type="button" class="btn btn-success bg-green-500 text-white py-2 px-4 rounded mt-2" id="btnGirisYap">Giriş Yap</button>
+			</div>
+			<div class="w-full md:w-1/12"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+</body>
+</html>
+
+
